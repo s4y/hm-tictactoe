@@ -242,24 +242,13 @@ Game.prototype.reset = function(){
 }
 
 var game = new Game(document.getElementById('board'));
-game.onreset = function(){
-	document.body.className = 'start';
-};
-game.onhumanturn = function(){
-	document.body.className = 'humanTurn';
-};
-game.oncomputerturn = function(){
-	document.body.className = 'computerTurn';
-};
-game.onhumanwin = function(){
-	document.body.className = 'humanWin';
-};
-game.oncomputerwin = function(){
-	document.body.className = 'computerWin';
-};
-game.ondraw = function(){
-	document.body.className = 'draw';
-};
+game.onreset = function(){ document.body.className = 'start'; };
+game.onhumanturn = function(){ document.body.className = 'humanTurn'; };
+game.oncomputerturn = function(){ document.body.className = 'computerTurn'; };
+game.onhumanwin = function(){ document.body.className = 'humanWin'; };
+game.oncomputerwin = function(){ document.body.className = 'computerWin'; };
+game.ondraw = function(){ document.body.className = 'draw'; };
+
 document.getElementById('computerStarts').addEventListener('click', function(){
 	game.players = { '-1': 'o', '1': 'x' };
 	game.playBestMove();
