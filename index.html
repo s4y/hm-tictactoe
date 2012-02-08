@@ -32,11 +32,16 @@
 			width: 25em;
 			height: 25em;
 			border-collapse: collapse;
+			table-layout: fixed;
+			-webkit-transition: 0.1s ease-in-out background-color;
+		}
+		#board.locked{
+			background-color: #CCC;
 		}
 		#board>tbody>tr>td{
 			border: 0.5em solid transparent;
 		}
-		#board>tbody>tr>td:not(.chosen){
+		#board:not(.locked)>tbody>tr>td:not(.chosen){
 			cursor: pointer;
 		}
 		#board>tbody>tr:nth-last-child(n+2)>td{
@@ -47,32 +52,40 @@
 		}
 		#board>tbody>tr>td.x{
 			background: #798CFF;
+			background-image: url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZlcnNpb249IjEuMSIgdmlld0JveD0iMCAwIDEwMCAxMDAiPgoJPGxpbmUgeDE9IjMwIiB5MT0iMzAiIHgyPSI3MCIgeTI9IjcwIiBzdHJva2U9IndoaXRlIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS13aWR0aD0iOCIgLz4KCTxsaW5lIHgxPSI3MCIgeTE9IjMwIiB4Mj0iMzAiIHkyPSI3MCIgc3Ryb2tlPSJ3aGl0ZSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2Utd2lkdGg9IjgiIC8+Cjwvc3ZnPg==);
+		}
+		#board>tbody>tr>td::after{
+			font-size: 3em;
+			content: '-';
+			color: transparent;
 		}
 		#board>tbody>tr>td.o{
 			background: #FF7C76;
+			background-image: url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZlcnNpb249IjEuMSIgdmlld0JveD0iMCAwIDEwMCAxMDAiPgoJPGNpcmNsZSBjeD0iNTAiIGN5PSI1MCIgcj0iMjUiIHN0cm9rZT0id2hpdGUiIHN0cm9rZS13aWR0aD0iOCIgZmlsbD0ibm9uZSIgLz4KPC9zdmc+);
+		}
+		body:not(.start)>#start,
+		body:not(.humanTurn)>#humanTurn,
+		body:not(.computerTurn)>#computerTurn,
+		body:not(.humanWin)>#humanWin,
+		body:not(.computerWin)>#computerWin,
+		body:not(.draw)>#draw{
+			display: none;
 		}
 	</style>
 </head>
 
-<body>
+<body class="start">
 <h1>Tic Tac Toe</h1>
-<p>Pick a square to start playing, or <a class="action">let me start</a>.</p>
+<p id="start">Pick a square to start playing, or <a id="computerStarts" class="action">let me start</a>.</p>
+<p id="humanTurn">Your turn.</p>
+<p id="computerTurn">My turn&hellip;</p>
+<p id="humanWin">You win! <a class="action playAgain">Play again</a>?</p>
+<p id="computerWin">I won that round. <a class="action playAgain">Play again</a>?</p>
+<p id="draw">Draw. The only winning move is not to <a class="action playAgain">play again</a>.</p>
 <table id="board" border=0 cellspacing=0 cellpadding=0>
-	<tr>
-		<td></td>
-		<td></td>
-		<td></td>
-	</tr>
-	<tr>
-		<td></td>
-		<td></td>
-		<td></td>
-	</tr>
-	<tr>
-		<td></td>
-		<td></td>
-		<td></td>
-	</tr>
+	<tr><td></td><td></td><td></td></tr>
+	<tr><td></td><td></td><td></td></tr>
+	<tr><td></td><td></td><td></td></tr>
 </table>
 <script>
 if (!('bind' in Function.prototype)) {
@@ -85,17 +98,11 @@ if (!('bind' in Function.prototype)) {
 }
 function Board(board){
 	if (board) {
-		this.data = board.data.map(function(row){ return row.map(function(cell){ return { player: cell.player } }); });
+		this.data = board.data.map(function(row){ return row.map(function(cell){ return cell; }); });
+	} else {
+		this.data = [[0, 0, 0], [0, 0, 0], [0, 0, 0]];
 	}
 }
-Board.prototype.get = function(x, y){
-	if (x in this.data && y in this.data[x]){
-		return this.data[x][y].player;
-	}
-};
-Board.prototype.play = function(x, y, player){
-	var position = this.data[x][y].player = player;
-};
 Board.prototype.state = function (){
 	var count, winner, openSquares = [];
 	
@@ -103,8 +110,8 @@ Board.prototype.state = function (){
 	for (var row = 0; row <= 2; row++) {
 		count = { '1': 0, '-1': 0, '0': 0 }
 		for (var col = 0; col <= 2; col++) {
-			count[this.get(row, col)]++;
-			if (this.get(row, col) === 0) {
+			count[this.data[row][col]]++;
+			if (this.data[row][col] === 0) {
 				openSquares.push([row, col]);
 			}
 		}
@@ -120,7 +127,7 @@ Board.prototype.state = function (){
 		for (var col = 0; col <= 2; col++) {
 			count = { '1': 0, '-1': 0, '0': 0 }
 			for (var row = 0; row <= 2; row++) {
-				count[this.get(row, col)]++;
+				count[this.data[row][col]]++;
 			}
 			if (count['1'] === 3) {
 				winner = 1;
@@ -134,7 +141,7 @@ Board.prototype.state = function (){
 		// Diagonal
 		count = { '1': 0, '-1': 0, '0': 0 }
 		for (var i = 0; i <= 2; i++) {
-			count[this.get(i, i)]++;
+			count[this.data[i][i]]++;
 		}
 		if (count['1'] === 3) {
 			winner = 1;
@@ -147,7 +154,7 @@ Board.prototype.state = function (){
 		// Antidiagonal
 		count = { '1': 0, '-1': 0, '0': 0 }
 		for (var i = 0; i <= 2; i++) {
-			count[this.get(i, 2-i)]++;
+			count[this.data[i][2-i]]++;
 		}
 		if (count['1'] === 3) {
 			winner = 1;
@@ -166,67 +173,107 @@ Board.prototype.bestMove = function(asOpponent){
 		return boardState.openSquares.map(function(square){
 			var testBoard, state;
 			testBoard = new Board(this);
-			testBoard.play(square[0], square[1], asOpponent ? -1 : 1);
+			testBoard.data[square[0]][square[1]] = asOpponent ? -1 : 1;
 			nextMove = testBoard.bestMove(!asOpponent);
-			return { move: square, score: -nextMove.score };
+			return { move: square, score: -nextMove.score * 0.9 };
 		}.bind(this)).sort(function(a, b){ return a.score < b.score ? 1 : a.score > b.score ? -1 : 0; })[0];
 	}
 }
 
-function ViewBoard(el, callback){
-	this.data = [];
-	this.callback = callback;
-	Array.prototype.forEach.call(el.tBodies[0].rows, function(row, x){
-		var cells = [];
-		this.data.push(cells);
-		Array.prototype.forEach.call(row.cells, function(cell, y){
-			var cellData = { player: 0, element: cell };
-			cells.push(cellData);
+function Game(el){
+	this.board = new Board;
+	this.boardElement = el;
+	this.elements = Array.prototype.map.call(el.tBodies[0].rows, function(rowEl, row){
+		return Array.prototype.map.call(rowEl.cells, function(cell, col){
 			cell.addEventListener('click', function(){
-				if (cellData.player === 0) {
-					this.callback({ x: x, y: y, cell: cellData });
+				if (!this.locked && this.board.data[row][col] === 0) {
+					// If playing that move didn’t end the game…
+					if (!this.play(row, col, -1)) {
+						this.playBestMove();
+					}
 				}
 			}.bind(this));
+			return cell;
 		}.bind(this));
 	}.bind(this));
-}
-ViewBoard.prototype = new Board;
-ViewBoard.prototype.ownPlayer = 'o';
-ViewBoard.prototype.play = function(x, y, player){
-	var position = this.data[x][y], win;
-	position.player = player;
-	position.element.className = 'chosen ' + (this.ownPlayer === 'o' ? (player > 0 ? 'o' : 'x') : (player > 0 ? 'x' : 'o'));
-	if((win = this.state().winner) !== null){
-		console.log(win === 1 ? 'I won' : win === -1 ? 'you won' : 'draw');
-		setTimeout(function(){
-			board.reset();
-		}, 2000);
-	}
-	return win;
 };
-ViewBoard.prototype.reset = function(){
-	this.data.forEach(function(row){
+Game.prototype.players = { '-1': 'x', '1': 'o' };
+Game.prototype.play = function(row, col, player){
+	var winner, callback;
+	this.board.data[row][col] = player;
+	this.elements[row][col].className = 'chosen ' + this.players[player];
+	if((winner = this.board.state().winner) !== null){
+		var callback = { '-1': 'onhumanwin', '0': 'ondraw', '1': 'oncomputerwin' }[winner];
+		this[callback] && this[callback]();
+		return true;
+	}
+};
+Game.prototype.playBestMove = function(){
+	this.lock();
+	this.oncomputerturn && this.oncomputerturn();
+	// Let the event loop turn over so the lock is reflected
+	// (plus a delay for the transition — ideally we’d use a
+	// TransitionEnd event, but this is OK for now)
+	setTimeout(function(){
+		// Play our best move and unlock the board if it didn’t end the game
+		if (!this.play.apply(this, this.board.bestMove().move.concat(1))) {
+			// If the human player clicked any other squares while we were blocked,
+			// wait a moment so those events get taken care of while the board is locked
+			setTimeout(function(){
+				this.unlock();
+				this.onhumanturn && this.onhumanturn();
+			}.bind(this), 10);
+		}
+	}.bind(this), 200);
+};
+Game.prototype.lock = function(){
+	this.locked = true;
+	this.boardElement.className = 'locked';
+};
+Game.prototype.unlock = function(){
+	this.locked = false;
+	this.boardElement.className = '';
+};
+Game.prototype.reset = function(){
+	this.board = new Board;
+	this.elements.forEach(function(row){
 		row.forEach(function(cell){
-			cell.player = 0;
-			cell.element.className = '';
+			cell.className = '';
 		});
 	});
+	delete this.players;
+	this.unlock();
+	this.onreset && this.onreset();
+}
+
+var game = new Game(document.getElementById('board'));
+game.onreset = function(){
+	document.body.className = 'start';
 };
-
-
-function Game(board){
-	this.board = board;
+game.onhumanturn = function(){
+	document.body.className = 'humanTurn';
 };
-
-var board = new ViewBoard(document.getElementById('board'), function(move){
-	var win;
-	if ((win = board.play(move.x, move.y, -1)) === null) {
-		setTimeout(function(){
-			board.play.apply(board, board.bestMove().move.concat(1));
-		});
-	}
+game.oncomputerturn = function(){
+	document.body.className = 'computerTurn';
+};
+game.onhumanwin = function(){
+	document.body.className = 'humanWin';
+};
+game.oncomputerwin = function(){
+	document.body.className = 'computerWin';
+};
+game.ondraw = function(){
+	document.body.className = 'draw';
+};
+document.getElementById('computerStarts').addEventListener('click', function(){
+	game.players = { '-1': 'o', '1': 'x' };
+	game.playBestMove();
 });
-var game = new Game(board);
+document.addEventListener('click', function(e){
+	if (e.target.className.split(' ').indexOf('playAgain') != -1 ) {
+		game.reset();
+	}
+})
 </script>
 </body>
 </html>
