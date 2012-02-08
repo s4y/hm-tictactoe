@@ -157,18 +157,21 @@ Board.prototype.state = function (){
 	};
 };
 Board.prototype.bestMove = function(asOpponent){
-	var boardState;
+	var boardState, testBoard, square, score, bestMove, i, l;
 	boardState = this.state();
 	if (boardState.winner !== null) {
 		return { score: (asOpponent ? -1 : 1) * boardState.winner };
 	} else {
-		return boardState.openSquares.map(function(square){
-			var testBoard, state;
+		for (i = 0, l = boardState.openSquares.length; i < l; i++) {
+			square = boardState.openSquares[i];
 			testBoard = new Board(this);
 			testBoard.data[square[0]][square[1]] = asOpponent ? -1 : 1;
-			nextMove = testBoard.bestMove(!asOpponent);
-			return { move: square, score: -nextMove.score * 0.9 };
-		}.bind(this)).sort(function(a, b){ return a.score < b.score ? 1 : a.score > b.score ? -1 : 0; })[0];
+			score = -testBoard.bestMove(!asOpponent).score * 0.9;
+			if (!bestMove || score > bestMove.score) {
+				bestMove = { move: square, score: score };
+			}
+		}
+		return bestMove;
 	}
 }
 
