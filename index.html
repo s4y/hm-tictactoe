@@ -88,6 +88,11 @@
 	<tr><td></td><td></td><td></td></tr>
 </table>
 <script>
+// Polyfill (function(){}).bind()
+// I have mixed feelings about polyfills like this, but in this case I think
+// it’s a good solution to controling `this`.
+//
+// I like using https://github.com/kriskowal/es5-shim in my personal projects.
 if (!('bind' in Function.prototype)) {
 	Function.prototype.bind = function(context){
 		var fn = this;
@@ -96,6 +101,9 @@ if (!('bind' in Function.prototype)) {
 		}
 	}
 }
+
+// Represents a board. Can be passed an existing
+// board and copy its data into the new one.
 function Board(board){
 	if (board) {
 		this.data = board.data.map(function(row){ return row.map(function(cell){ return cell; }); });
@@ -103,6 +111,9 @@ function Board(board){
 		this.data = [[0, 0, 0], [0, 0, 0], [0, 0, 0]];
 	}
 }
+// Get the state (who won and how many squares are open) of a board. It’s ugly,
+// but this function is called more than any other, so it needs to be fast.
+// This implemetation is fast enough for me, 12x faster than my first attempt.
 Board.prototype.state = function (){
 	var winner, openSquares = [],
 		computerRow0 = 0, computerRow1 = 0, computerRow2 = 0,
@@ -156,6 +167,12 @@ Board.prototype.state = function (){
 		openSquares: openSquares
 	};
 };
+// Analyze the board, recursively, and return the best move with a score
+// between -1 and 1. For each move it takes to reach a certain ending, the
+// move’s score is multiplied by 0.9 so that it prefers to win in fewer moves.
+//
+// It’s an implementation of negamax search, which I just learned about!
+// http://en.wikipedia.org/wiki/Negamax
 Board.prototype.bestMove = function(asOpponent){
 	var boardState, testBoard, square, score, bestMove, i, l;
 	boardState = this.state();
@@ -175,6 +192,8 @@ Board.prototype.bestMove = function(asOpponent){
 	}
 }
 
+// Owns the board and the HTML elements where the game is played, keeps track
+// of the state of the game as a whole. Fires callbacks when things happen.
 function Game(el){
 	this.board = new Board;
 	this.boardElement = el;
@@ -192,6 +211,7 @@ function Game(el){
 		}.bind(this));
 	}.bind(this));
 };
+// Can be overridden to change which player (human or computer) get which color
 Game.prototype.players = { '-1': 'x', '1': 'o' };
 Game.prototype.play = function(row, col, player){
 	var winner, callback;
