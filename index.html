@@ -216,7 +216,7 @@ function Game(el){
 						this.playBestMove();
 					}
 				}
-			}.bind(this));
+			}.bind(this), false);
 			return cell;
 		}.bind(this));
 	}.bind(this));
@@ -282,12 +282,12 @@ game.ondraw = function(){ document.body.className = 'draw'; };
 document.getElementById('computerStarts').addEventListener('click', function(){
 	game.players = { '-1': 'o', '1': 'x' };
 	game.playBestMove();
-});
+}, false);
 document.addEventListener('click', function(e){
 	if (e.target.className.split(' ').indexOf('playAgain') != -1 ) {
 		game.reset();
 	}
-});
+}, false);
 
 (function(){
 	var konami = [38, 38, 40, 40, 37, 39, 37, 39, 66, 65], position = 0;
@@ -302,7 +302,7 @@ document.addEventListener('click', function(e){
 		} else {
 			position = 0;
 		}
-	});
+	}, false);
 })();
 </script>
 </body>
